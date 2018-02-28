@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -24,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class TaskActivity extends AppCompatActivity implements View.OnClickListener {
     private EditText editTextTaskName, editTextNotes;
@@ -32,11 +34,13 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private TimePickerDialog.OnTimeSetListener mTimeSetListener;
     private TimePickerDialog.OnTimeSetListener mTimeSetListener2;
     Calendar c, c2;
+    Date startDate;
     DatabaseHelper dbHelper;
-
-    private int year, month, day, hourStart, minuteStart, hourEnd, minuteEnd;
+    private long start;
+    private int hourStart, minuteStart, hourEnd, minuteEnd;
     private Button buttonSaveTask;
     String date, timeStart, timeEnd, formattedDate;
+    private static final String TAG = "TaskActivity";
 
 
 
@@ -53,6 +57,22 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         editTextNotes = findViewById(R.id.editTextNotes);
         buttonSaveTask = findViewById(R.id.buttonSaveTask);
         dbHelper = new DatabaseHelper(this);
+
+        /*  */
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null ) {
+            String templateName = bundle.getString("templateName");
+            editTextTaskName.setText(templateName);
+
+        }
+
+        startDate = new Date();
+        String date = new SimpleDateFormat("MM-dd-yyyy").format(startDate);
+        Log.d(TAG, date);
+        start = startDate.getTime();
+        Log.d(TAG, String.valueOf(start));
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss a", Locale.getDefault());
+        Log.d(TAG,dateFormat.format(start));
 
         c = Calendar.getInstance();
         updateDate();
@@ -164,9 +184,11 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void saveTask() {
+        Spinner spinner = findViewById(R.id.spinner);
         String name = editTextTaskName.getText().toString();
         String notes = editTextNotes.getText().toString();
-        boolean insertData = dbHelper.addData(name, formattedDate, timeStart, timeEnd, notes);
+        String repeats = String.valueOf(spinner.getSelectedItem());
+        boolean insertData = dbHelper.addTask(name, formattedDate, timeStart, timeEnd, repeats, notes);
         if(insertData) {
             Toast.makeText(this, "Data added successfully", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(TaskActivity.this, ListTasksActivity.class);

@@ -30,11 +30,11 @@ public class ListTasksActivity extends AppCompatActivity {
     private void populateListView() {
         Log.d(TAG, "populateListView: Displaying data to ListView");
 
-        Cursor data = dbHelper.getData();
+        Cursor data = dbHelper.getTasks();
 
         ArrayList<String> listData = new ArrayList<>();
         while(data.moveToNext()) {
-            listData.add(data.getString(1) + "\t\t\t" + data.getString(2) + "\t\t\t" + data.getString(3));
+            listData.add(data.getString(1) + "\t\t\t" + data.getString(2) + "\t\t\t" + data.getString(3) + "\t\t\t" + data.getString(5));
         }
 
         ListAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listData);

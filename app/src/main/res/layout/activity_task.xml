@@ -88,6 +88,21 @@
             android:textSize="18sp" />
 
         <TextView
+            android:id="@+id/textViewRepeats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Repeats:"
+            android:textSize="18sp" />
+
+        <Spinner
+            android:id="@+id/spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:entries="@array/repeat_options"
+            android:minWidth="@android:dimen/thumbnail_width"
+            android:spinnerMode="dialog" />
+
+        <TextView
             android:id="@+id/textViewNotes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -101,6 +116,8 @@
             android:ems="10"
             android:gravity="end"
             android:inputType="textMultiLine" />
+
+
 
 
     </GridLayout>

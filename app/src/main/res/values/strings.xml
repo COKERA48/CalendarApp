@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">CalendarApp</string>
+
+    <string-array name="repeat_options">
+        <item>Never</item>
+        <item>Every Day</item>
+        <item>Every Week</item>
+        <item>Every 2 Weeks</item>
+        <item>Every Month</item>
+        <item>Every Year</item>
+    </string-array>
 </resources>

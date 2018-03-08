@@ -39,8 +39,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private long start;
     private int hourStart, minuteStart, hourEnd, minuteEnd;
     private Button buttonSaveTask;
-    String date, timeStart, timeEnd, formattedDate;
+    String date, timeStart, timeEnd, formattedDate, repeats;
     private static final String TAG = "TaskActivity";
+    Spinner spinner;
 
 
 
@@ -56,13 +57,17 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         textViewEndTimeInput = findViewById(R.id.textViewEndTimeInput);
         editTextNotes = findViewById(R.id.editTextNotes);
         buttonSaveTask = findViewById(R.id.buttonSaveTask);
+        spinner = findViewById(R.id.spinner);
         dbHelper = new DatabaseHelper(this);
 
         /*  */
         Bundle bundle = getIntent().getExtras();
         if (bundle != null ) {
-            String templateName = bundle.getString("templateName");
-            editTextTaskName.setText(templateName);
+            String tempName = bundle.getString("templateName");
+            repeats = bundle.getString("templateRepeats");
+            editTextTaskName.setText(tempName);
+
+            setRepeatsValue();
 
         }
 
@@ -121,6 +126,16 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 updateTimeEnd(hourEnd, minuteEnd);
             }
         };
+    }
+
+    private void setRepeatsValue() {
+        String[] repeatStrings = this.getResources().getStringArray(R.array.repeat_options);
+        for (int i = 0; i < repeatStrings.length; i++)
+        {
+            if (repeatStrings[i].equals(repeats)) {
+                spinner.setSelection(i);
+            }
+        }
     }
 
     public void updateDate()
@@ -184,7 +199,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void saveTask() {
-        Spinner spinner = findViewById(R.id.spinner);
+
         String name = editTextTaskName.getText().toString();
         String notes = editTextNotes.getText().toString();
         String repeats = String.valueOf(spinner.getSelectedItem());
@@ -208,6 +223,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                     android.R.style.Theme_Holo_Light_Dialog_MinWidth, mDateSetListener, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
                 dpd.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                 dpd.show();
+
                 break;
             case R.id.textViewStartTimeInput:
                 TimePickerDialog tpd = new TimePickerDialog(TaskActivity.this,

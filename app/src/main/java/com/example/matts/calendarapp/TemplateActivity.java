@@ -8,8 +8,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -21,20 +23,26 @@ public class TemplateActivity extends AppCompatActivity {
     private ListView listViewTemplates;
     private int catId;
     private String catName;
+    private Integer catIcon;
+    ImageView image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_template);
-        setTitle("Choose Template");
 
         Bundle bundle = getIntent().getExtras();
         if (bundle != null ) {
             catId = bundle.getInt("categoryID");
             catName = bundle.getString("categoryName");
+            catIcon = bundle.getInt("categoryIcon");
         }
+        setTitle("Choose Template");
 
-
+        image = (ImageView) findViewById(R.id.image);
+        image.setImageResource(catIcon);
+        TextView textViewCatName = findViewById(R.id.textViewCatName);
+        textViewCatName.setText(catName);
         listViewTemplates = (ListView) findViewById(R.id.listViewTemplates);
         dbHelper = new DatabaseHelper(this);
 
@@ -62,9 +70,6 @@ public class TemplateActivity extends AppCompatActivity {
                     Toast.makeText(TemplateActivity.this, "No repeat value associated with that template.", Toast.LENGTH_SHORT).show();
                 }
 
-                Intent intent = new Intent(TemplateActivity.this, TaskActivity.class);
-                intent.putExtra("templateName", listViewTemplates.getItemAtPosition(i).toString());
-                startActivity(intent);
             }
         });
     }

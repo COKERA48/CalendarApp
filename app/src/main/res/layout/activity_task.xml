@@ -34,15 +34,14 @@
             android:inputType="textPersonName" />
 
         <TextView
-            android:id="@+id/textViewDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="Date:"
+            android:text="Start Date:"
             android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/textViewDateInput"
+            android:id="@+id/tvStartDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:clickable="true"
@@ -52,7 +51,6 @@
             android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/textViewStartTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
@@ -60,7 +58,7 @@
             android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/textViewStartTimeInput"
+            android:id="@+id/tvStartTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:clickable="true"
@@ -70,7 +68,23 @@
             android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/textViewEndTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="End Date:"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tvEndDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:ems="10"
+            android:focusable="false"
+            android:gravity="end"
+            android:textSize="18sp" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
@@ -78,7 +92,7 @@
             android:textSize="18sp" />
 
         <TextView
-            android:id="@+id/textViewEndTimeInput"
+            android:id="@+id/tvEndTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:clickable="true"

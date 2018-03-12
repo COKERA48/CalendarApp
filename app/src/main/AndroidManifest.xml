@@ -19,7 +19,11 @@
         <activity android:name=".TaskActivity" />
         <activity android:name=".ListTasksActivity" />
         <activity android:name=".CategoryActivity" />
-        <activity android:name=".TemplateActivity"></activity>
+        <activity android:name=".TemplateActivity" />
+
+        <receiver android:name=".Alarm"
+            android:enabled="true"
+            android:exported="true"/>
     </application>
 
 </manifest>

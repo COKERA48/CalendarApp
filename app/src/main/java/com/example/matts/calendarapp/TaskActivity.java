@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,12 +35,11 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     Calendar calStart, calEnd;
     Date startDate;
     DatabaseHelper dbHelper;
-    private long start;
-    private int hourStart, minuteStart, hourEnd, minuteEnd;
     private Button buttonSaveTask;
-    private String formattedStartDate, formattedStartTime, formattedEndDate, formattedEndTime, repeats;
+    private String repeats;
     private static final String TAG = "TaskActivity";
     Spinner spinner;
+    DateFormat dateFormat, timeFormat;
 
 
 
@@ -59,6 +59,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         spinner = findViewById(R.id.spinner);
         dbHelper = new DatabaseHelper(this);
 
+        dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
+        timeFormat = new SimpleDateFormat( "hh:mm a", Locale.US);
+
         /*  */
         Bundle bundle = getIntent().getExtras();
         if (bundle != null ) {
@@ -72,21 +75,16 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
         // Create calendar for start date and set initial display of start date and time.
         calStart = Calendar.getInstance();
-        formattedStartDate = formatDate(calStart);
-        tvStartDate.setText(formattedStartDate);
-        hourStart = calStart.get(Calendar.HOUR_OF_DAY);
-        minuteStart = calStart.get(Calendar.MINUTE);
-        formattedStartTime = formatTime(hourStart, minuteStart, calStart);
-        tvStartTime.setText(formattedStartTime);
+        calStart.set(Calendar.SECOND, 0);
+        tvStartDate.setText(dateFormat.format(calStart.getTime()));
+        tvStartTime.setText(timeFormat.format(calStart.getTime()));
 
         // Create calendar for end date. Task end time is set to one hour after start time.
         calEnd = Calendar.getInstance();
-        formattedEndDate = formattedStartDate;
-        tvEndDate.setText(formattedEndDate);
-        hourEnd = hourStart + 1;
-        minuteEnd = minuteStart;
-        formattedEndTime = formatTime(hourEnd, minuteEnd, calEnd);
-        tvEndTime.setText(formattedEndTime);
+        calEnd.set(Calendar.SECOND, 0);
+        calEnd.add(Calendar.HOUR_OF_DAY, 1);
+        tvEndDate.setText(dateFormat.format(calEnd.getTime()));
+        tvEndTime.setText(timeFormat.format(calEnd.getTime()));
 
 
 
@@ -101,16 +99,10 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         StartDateSetListener = new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker datePicker, int y, int m, int d) {
-                calStart.set(Calendar.YEAR, y);
-                calStart.set(Calendar.MONTH, m);
-                calStart.set(Calendar.DAY_OF_MONTH, d);
-                formattedStartDate = formatDate(calStart);
-                tvStartDate.setText(formattedStartDate);
-                calEnd.set(Calendar.YEAR, y);
-                calEnd.set(Calendar.MONTH, m);
-                calEnd.set(Calendar.DAY_OF_MONTH, d);
-                formattedEndDate = formattedStartDate;
-                tvEndDate.setText(formattedEndDate);
+                calStart.set(y, m, d);
+                tvStartDate.setText(dateFormat.format(calStart.getTime()));
+                calEnd.set(y, m, d);
+                tvEndDate.setText(dateFormat.format(calEnd.getTime()));
                 checkTimes();
 
             }
@@ -120,14 +112,12 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         StartTimeSetListener = new TimePickerDialog.OnTimeSetListener() {
             @Override
             public void onTimeSet(TimePicker timePicker, int h, int m) {
-                hourStart   = h;
-                minuteStart = m;
-                formattedStartTime = formatTime(hourStart, minuteStart, calStart);
-                tvStartTime.setText(formattedStartTime);
-                hourEnd = hourStart + 1;
-                minuteEnd = minuteStart;
-                formattedEndTime = formatTime(hourEnd, minuteEnd, calEnd);
-                tvEndTime.setText(formattedEndTime);
+                calStart.set(Calendar.HOUR_OF_DAY, h);
+                calStart.set(Calendar.MINUTE, m);
+                calEnd.set(Calendar.HOUR_OF_DAY, h+1);
+                calEnd.set(Calendar.MINUTE, m);
+                tvStartTime.setText(timeFormat.format(calStart.getTime()));
+                tvEndTime.setText(timeFormat.format(calEnd.getTime()));
                 checkTimes();
             }
         };
@@ -135,11 +125,8 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         EndDateSetListener = new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker datePicker, int y, int m, int d) {
-                calEnd.set(Calendar.YEAR, y);
-                calEnd.set(Calendar.MONTH, m);
-                calEnd.set(Calendar.DAY_OF_MONTH, d);
-                formattedEndDate = formatDate(calEnd);
-                tvEndDate.setText(formattedEndDate);
+                calEnd.set(y, m, d);
+                tvEndDate.setText(dateFormat.format(calEnd.getTime()));
                 checkTimes();
             }
         };
@@ -147,10 +134,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         EndTimeSetListener = new TimePickerDialog.OnTimeSetListener() {
             @Override
             public void onTimeSet(TimePicker timePicker, int h, int m) {
-                hourEnd = h;
-                minuteEnd = m;
-                formattedEndTime = formatTime(hourEnd, minuteEnd, calEnd);
-                tvEndTime.setText(formattedEndTime);
+                calEnd.set(Calendar.HOUR_OF_DAY, h);
+                calEnd.set(Calendar.MINUTE, m);
+                tvEndTime.setText(timeFormat.format(calEnd.getTime()));
                 checkTimes();
             }
         };
@@ -169,35 +155,6 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    // Formats date of calendar object to "MM/dd/yyyy" string
-    public String formatDate(Calendar calendar)
-    {
-        DateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
-        return simpleDateFormat.format(calendar.getTime());
-    }
-
-    // Formats time from military to civilian and determine AM or PM. Formats time to "hh:mm" string with am or pm.
-    public String formatTime(int hours, int minutes, Calendar calendar) {
-        String am_pm;
-        if (hours > 12) {
-            hours -= 12;
-            am_pm = "PM";
-        } else if (hours == 0) {
-            hours += 12;
-            am_pm = "AM";
-        } else if (hours == 12)
-            am_pm = "PM";
-        else
-            am_pm = "AM";
-        calendar.set(Calendar.HOUR_OF_DAY, hours);
-        calendar.set(Calendar.MINUTE, minutes);
-        DateFormat simpleDateFormat = new SimpleDateFormat( "hh:mm", Locale.US);
-        String formattedTime = simpleDateFormat.format(calendar.getTime());
-        return formattedTime + " " + am_pm;
-
-    }
-
-
     public void checkTimes() {
 
         if (calStart.compareTo(calEnd) > 0) {
@@ -213,28 +170,39 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         String name = editTextTaskName.getText().toString();
         String notes = editTextNotes.getText().toString();
         String repeats = String.valueOf(spinner.getSelectedItem());
-        boolean insertData = dbHelper.addTask(name, formattedStartDate, formattedStartTime, formattedEndDate, formattedEndTime, repeats, notes);
+        boolean insertData = dbHelper.addTask(name, dateFormat.format(calStart.getTime()), timeFormat.format(calStart.getTime()), dateFormat.format(calEnd.getTime()), timeFormat.format(calEnd.getTime()), repeats, notes);
         if(insertData) {
-            Toast.makeText(this, "Data added successfully", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(TaskActivity.this, ListTasksActivity.class);
+            Toast.makeText(this, "Task Saved!", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
-            setAlarm(calStart.getTimeInMillis());
+            setAlarm();
         }
 
         else Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
 
     }
 
-    private void setAlarm(long timeInMillis) {
+    private void setAlarm() {
+
+        Intent intent = new Intent(getApplicationContext(), Alarm.class);
+        intent.putExtra("taskName", editTextTaskName.getText().toString());
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager != null) {
 
-        Intent intent = new Intent(this, Alarm.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
-        if(alarmManager != null)
-            alarmManager.setRepeating(AlarmManager.RTC, timeInMillis, AlarmManager.INTERVAL_DAY, pendingIntent);
+            if (Build.VERSION.SDK_INT >= 19) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), pendingIntent);
+            }
+            else {
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+            }
 
-        Toast.makeText(this, "Alarm is set", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Alarm is set", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "setAlarm: " + calStart.getTime().toString());
+
+        }
     }
+
 
     @Override
     public void onClick(View view) {
@@ -250,7 +218,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.tvStartTime:
                 TimePickerDialog tpdStart = new TimePickerDialog(TaskActivity.this,
-                        android.R.style.Theme_Holo_Light_Dialog_MinWidth, StartTimeSetListener, hourStart, minuteStart, false);
+                        android.R.style.Theme_Holo_Light_Dialog_MinWidth, StartTimeSetListener, calStart.get(Calendar.HOUR_OF_DAY), calStart.get(Calendar.MINUTE), false);
                 if(tpdStart.getWindow() != null)
                     tpdStart.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                 tpdStart.show();
@@ -264,14 +232,13 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.tvEndTime:
                 TimePickerDialog tpdEnd = new TimePickerDialog(TaskActivity.this,
-                        android.R.style.Theme_Holo_Light_Dialog_MinWidth, EndTimeSetListener, hourEnd, minuteEnd, false);
+                        android.R.style.Theme_Holo_Light_Dialog_MinWidth, EndTimeSetListener, calEnd.get(Calendar.HOUR_OF_DAY), calEnd.get(Calendar.MINUTE), false);
                 if (tpdEnd.getWindow() != null)
                     tpdEnd.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                 tpdEnd.show();
                 break;
             case R.id.buttonSaveTask:
                 saveTask();
-
                 break;
 
         }

@@ -183,49 +183,64 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setAlarm() {
-
+        long interval = 0;
         Intent intent = new Intent(getApplicationContext(), Alarm.class);
         intent.putExtra("taskName", editTextTaskName.getText().toString());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
-        if (spinner.getSelectedItem().toString().equals("Never")) {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), pendingIntent);
-        }
 
-        long interval = 0;
-        switch (spinner.getSelectedItem().toString()) {
-            case "Never":
-                interval = 0;
-                break;
-            case "Every Day":
-                interval = 86400000;
-                break;
-            case "Every Other Day":
-                interval = 172800000;
-                break;
-            case "Every Week":
-                interval = 604800000;
-                break;
-            case "Every 2 Weeks":
-                interval = 1209600000;
-                break;
-            case "Every Month":
-                interval = 2629746000L;
-                break;
-            case "Every Year":
-                interval = 31556952000L;
-                break;
-        }
+        /*
+            Intent intent = new Intent(load.this, AlarmReceiver.class);
+            final int _id = (int) System.currentTimeMillis();
+            PendingIntent appIntent = PendingIntent.getBroadcast(this, _id, intent,PendingIntent.FLAG_ONE_SHOT);
+         */
 
         if (alarmManager != null) {
-
-            if (Build.VERSION.SDK_INT >= 19) {
-                alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), interval, pendingIntent);
+            if (spinner.getSelectedItem().toString().equals("Never")) {
+                if (Build.VERSION.SDK_INT >= 19) {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), pendingIntent);
+                }
+                else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), pendingIntent);
+                }
             }
             else {
-                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), interval, pendingIntent);
-            }
+
+                switch (spinner.getSelectedItem().toString()) {
+                    case "Every Day":
+                        interval = 86400000;
+                        break;
+                    case "Every Other Day":
+                        interval = 172800000;
+                        break;
+                    case "Every Week":
+                        interval = 604800000;
+                        break;
+                    case "Every 2 Weeks":
+                        interval = 1209600000;
+                        break;
+                    case "Every Month":
+                        interval = 2629746000L;
+                        break;
+                    case "Every Year":
+                        interval = 31556952000L;
+                        break;
+                }
+
+
+
+                if (Build.VERSION.SDK_INT >= 19) {
+                    alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), interval, pendingIntent);
+                }
+                else {
+                    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), interval, pendingIntent);
+                }
+
+        }
+
+
+
 
             Toast.makeText(this, "Alarm is set", Toast.LENGTH_SHORT).show();
             Log.d(TAG, "setAlarm: time" + calStart.getTime().toString() + " " + interval);

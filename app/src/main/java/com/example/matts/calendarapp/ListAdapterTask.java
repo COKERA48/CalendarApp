@@ -34,7 +34,6 @@ public class ListAdapterTask extends ArrayAdapter<String> {
     public View getView(int position, View view, ViewGroup parent) {
         LayoutInflater inflater=context.getLayoutInflater();
         View rowView=inflater.inflate(R.layout.single_row_task, null,true);
-        //rowView.setBackgroundResource(R.drawable.ic_word_bubble);
 
         TextView txtName = (TextView) rowView.findViewById(R.id.textViewTaskName);
         TextView txtDay = (TextView) rowView.findViewById(R.id.textViewTaskDate);

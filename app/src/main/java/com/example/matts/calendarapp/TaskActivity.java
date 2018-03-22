@@ -188,17 +188,47 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         intent.putExtra("taskName", editTextTaskName.getText().toString());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        if (spinner.getSelectedItem().toString().equals("Never")) {
+            alarmManager.set(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), pendingIntent);
+        }
+
+        long interval = 0;
+        switch (spinner.getSelectedItem().toString()) {
+            case "Never":
+                interval = 0;
+                break;
+            case "Every Day":
+                interval = 86400000;
+                break;
+            case "Every Other Day":
+                interval = 172800000;
+                break;
+            case "Every Week":
+                interval = 604800000;
+                break;
+            case "Every 2 Weeks":
+                interval = 1209600000;
+                break;
+            case "Every Month":
+                interval = 2629746000L;
+                break;
+            case "Every Year":
+                interval = 31556952000L;
+                break;
+        }
+
         if (alarmManager != null) {
 
             if (Build.VERSION.SDK_INT >= 19) {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), pendingIntent);
+                alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), interval, pendingIntent);
             }
             else {
-                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calStart.getTimeInMillis(), interval, pendingIntent);
             }
 
             Toast.makeText(this, "Alarm is set", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "setAlarm: " + calStart.getTime().toString());
+            Log.d(TAG, "setAlarm: time" + calStart.getTime().toString() + " " + interval);
 
         }
     }

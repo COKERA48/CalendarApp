@@ -23,9 +23,11 @@ import android.widget.ListView;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener{
     private ListView listViewUpcomingTasks;
@@ -58,18 +60,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
 
         dbHelper = new DatabaseHelper(this);
         populateListView();
-/*
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            NotificationChannel channel = new NotificationChannel(Constants.CHANNEL_ID, Constants.CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription(Constants.CHANNEL_DESCRIPTION);
-            channel.enableLights(true);
-            channel.setLightColor(Color.BLUE);
-            channel.enableVibration(true);
-            channel.setVibrationPattern(new long[] {100, 200, 300, 400, 500, 400, 300, 200, 400});
-            notificationManager.createNotificationChannel(channel);
-        }
-*/
+
     }
 
     @Override
@@ -86,8 +77,10 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
     // Displays tasks to listView
     private void populateListView() {
         Log.d(TAG, "populateListView: Displaying data to ListView");
+        Calendar c = Calendar.getInstance();
+        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
 
-        Cursor data = dbHelper.getTasks();
+        Cursor data = dbHelper.getTasksByDate(dateFormat.format(c.getTime()));
 
         ArrayList<String> taskNames = new ArrayList<>();
         ArrayList<String> taskDates = new ArrayList<>();

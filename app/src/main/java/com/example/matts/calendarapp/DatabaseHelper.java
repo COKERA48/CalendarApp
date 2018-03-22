@@ -117,6 +117,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
+    Cursor getTasksByDate(String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "SELECT * FROM " + TABLE_TASK + " WHERE " + START_DATE + " = '" + date + "'";
+        return db.rawQuery(query, null);
+    }
+
     /* Returns category cursor */
     Cursor getCategories() {
         SQLiteDatabase db = this.getWritableDatabase();

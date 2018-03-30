@@ -1,10 +1,15 @@
 package com.example.matts.calendarapp;
 
+import android.app.LoaderManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ContentUris;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -17,11 +22,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.ListView;
 
-import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -29,13 +34,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener{
+public class MainActivity extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor>{
     private ListView listViewUpcomingTasks;
     private static final String TAG = "MainActivity";
     DatabaseHelper dbHelper;
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle toggle;
     private NavigationView navigation;
+    TaskCursorAdapter mCursorAdapter;
+
+    private static final int VEHICLE_LOADER = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,16 +58,72 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
 
         navigation = findViewById(R.id.navigationView);
         navigation.setNavigationItemSelectedListener(this);
+
         listViewUpcomingTasks = (ListView) findViewById(R.id.listViewUpcomingTasks);
 
-        // == Not working for me for some reason ==
-        // listViewUpcomingTasks.setLayoutParams(new LinearLayout.LayoutParams
-        //                                      (LinearLayout.LayoutParams.FILL_PARENT, 4));
+        mCursorAdapter = new TaskCursorAdapter(this, null);
+        listViewUpcomingTasks.setAdapter(mCursorAdapter);
+
+        listViewUpcomingTasks.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+
+                Intent intent = new Intent(MainActivity.this, TaskActivity.class);
+
+                Uri currentVehicleUri = ContentUris.withAppendedId(Contract.TaskEntry.CONTENT_URI, id);
+
+                // Set the URI on the data field of the intent
+                intent.setData(currentVehicleUri);
+
+                startActivity(intent);
+
+            }
+        });
+
+        getLoaderManager().initLoader(VEHICLE_LOADER, null, this);
+    }
 
 
 
-        dbHelper = new DatabaseHelper(this);
-        populateListView();
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        String[] projection = {
+                Contract.TaskEntry._ID,
+                Contract.TaskEntry.KEY_NAME,
+                Contract.TaskEntry.KEY_START_DATE,
+                Contract.TaskEntry.KEY_START_TIME,
+                Contract.TaskEntry.KEY_END_DATE,
+                Contract.TaskEntry.KEY_END_TIME,
+                Contract.TaskEntry.KEY_REPEATS,
+                Contract.TaskEntry.KEY_NOTES
+
+        };
+
+        Calendar c = Calendar.getInstance();
+        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
+        String selectDate = dateFormat.format(c.getTime());
+        String selection = "(" + Contract.TaskEntry.KEY_START_DATE + " = '" + selectDate + "')";
+
+
+        return new CursorLoader(this,   // Parent activity context
+                Contract.TaskEntry.CONTENT_URI,   // Provider content URI to query
+                projection,             // Columns to include in the resulting Cursor
+                selection,                   // No selection clause
+                null,                   // No selection arguments
+                null);                  // Default sort order
+
+    }
+
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        mCursorAdapter.swapCursor(cursor);
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mCursorAdapter.swapCursor(null);
 
     }
 
@@ -70,30 +134,6 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-
-
-    // Displays tasks to listView
-    private void populateListView() {
-        Log.d(TAG, "populateListView: Displaying data to ListView");
-        Calendar c = Calendar.getInstance();
-        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
-
-        Cursor data = dbHelper.getTasksByDate(dateFormat.format(c.getTime()));
-
-        ArrayList<String> taskNames = new ArrayList<>();
-        ArrayList<String> taskDates = new ArrayList<>();
-        ArrayList<String> taskTimes = new ArrayList<>();
-        while(data.moveToNext()) {
-            taskNames.add(data.getString(1));
-            taskDates.add(data.getString(2));
-            taskTimes.add(data.getString(3));
-        }
-
-
-        ListAdapterTask adapter = new ListAdapterTask(this, taskNames, taskDates, taskTimes);
-        listViewUpcomingTasks.setAdapter(adapter);
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.util.Calendar;
 public class Alarm extends BroadcastReceiver {
     private static final String TAG = "Alarm";
     private String taskName;
+    private int id;
     @Override
     public void onReceive(Context context, Intent intent) {
         Calendar c = Calendar.getInstance();
@@ -29,15 +30,15 @@ public class Alarm extends BroadcastReceiver {
         Bundle bundle = intent.getExtras();
         if (bundle != null ) {
             taskName = bundle.getString("taskName");
+            id = bundle.getInt("alarmID");
         }
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
         Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context,100,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context,id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         Builder builder = new Builder(context)
                 .setContentIntent(pendingIntent)
-                .setContentText(taskName)
-                .setContentTitle("Quick Mention")
+                .setContentTitle(taskName)
                 .setSound(alarmSound)
                 .setAutoCancel(true);
 
@@ -47,7 +48,7 @@ public class Alarm extends BroadcastReceiver {
         } else {
             builder.setSmallIcon(R.drawable.ic_notification);
         }
-        notificationManager.notify(100,builder.build());
+        notificationManager.notify(id,builder.build());
 
 
     }

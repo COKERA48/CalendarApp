@@ -14,10 +14,10 @@ import android.util.Log;
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DatabaseHelper";
     private static final String DB_NAME = "quick_mention_db";
-    private static final int DB_VERSION = 18;
+    private static final int DB_VERSION = 21;
 
     /* table names */
-    private static final String TABLE_TASK = "tasks";
+    private static final String TABLE_TASK = "tasks_table";
     private static final String TABLE_CATEGORY = "categories";
     private static final String TABLE_TEMPLATE = "templates";
 
@@ -40,17 +40,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+
+
         /* Create task table */
-        String createTableTask = "CREATE TABLE " + TABLE_TASK + " (" +
-                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                NAME + " TEXT, " +
-                START_DATE + " TEXT, " +
-                START_TIME + " TEXT, " +
-                END_DATE + " TEXT, " +
-                END_TIME + " TEXT, " +
-                REPEATS + " TEXT, " +
-                NOTES + " TEXT, " +
-                "dateTime DATETIME)";
+        String createTableTask = "CREATE TABLE " + Contract.TaskEntry.TABLE_NAME + " (" +
+                Contract.TaskEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                Contract.TaskEntry.KEY_NAME + " TEXT, " +
+                Contract.TaskEntry.KEY_START_DATE + " TEXT, " +
+                Contract.TaskEntry.KEY_START_TIME + " TEXT, " +
+                Contract.TaskEntry.KEY_END_DATE + " TEXT, " +
+                Contract.TaskEntry.KEY_END_TIME + " TEXT, " +
+                Contract.TaskEntry.KEY_REPEATS + " TEXT, " +
+                Contract.TaskEntry.KEY_NOTES + " TEXT)";
         db.execSQL(createTableTask);
 
         /* Create category table */
@@ -83,7 +84,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASK);
+        db.execSQL("DROP TABLE IF EXISTS " + Contract.TaskEntry.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORY);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TEMPLATE);
         onCreate(db);

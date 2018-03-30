@@ -2,16 +2,23 @@ package com.example.matts.calendarapp;
 
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.LoaderManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -27,27 +34,45 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-public class TaskActivity extends AppCompatActivity implements View.OnClickListener {
+public class TaskActivity extends AppCompatActivity implements View.OnClickListener, LoaderManager.LoaderCallbacks<Cursor> {
     private EditText editTextTaskName, editTextNotes;
     private TextView tvStartDate, tvStartTime, tvEndDate, tvEndTime;
     private DatePickerDialog.OnDateSetListener StartDateSetListener, EndDateSetListener;
     private TimePickerDialog.OnTimeSetListener StartTimeSetListener, EndTimeSetListener;
     Calendar calStart, calEnd;
-    Date startDate;
     DatabaseHelper dbHelper;
     private Button buttonSaveTask;
-    private String repeats;
     private static final String TAG = "TaskActivity";
     Spinner spinner;
     DateFormat dateFormat, timeFormat;
 
 
+    private Uri mCurrentReminderUri;
+    private boolean mVehicleHasChanged = false;
+
+    private static final int EXISTING_VEHICLE_LOADER = 0;
+
+    // Values for orientation change
+    private static final String KEY_NAME = "title_key";
+    private static final String KEY_START_TIME = "start_time_key";
+    private static final String KEY_START_DATE = "start_date_key";
+    private static final String KEY_END_TIME = "end_time_key";
+    private static final String KEY_END_DATE = "end_date_key";
+    private static final String KEY_REPEATS = "repeats_key";
+    private static final String KEY_NOTES = "notes_key";
+
+    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            mVehicleHasChanged = true;
+            return false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task);
-        setTitle("New Task");
 
         editTextTaskName = findViewById(R.id.editTextTaskName);
         tvStartDate = findViewById(R.id.tvStartDate);
@@ -58,20 +83,39 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         buttonSaveTask = findViewById(R.id.buttonSaveTask);
         spinner = findViewById(R.id.spinner);
         dbHelper = new DatabaseHelper(this);
+        Intent intent = getIntent();
+        mCurrentReminderUri = intent.getData();
+
+        if (mCurrentReminderUri == null) {
+
+            setTitle("New Task");
+
+            Bundle bundle = getIntent().getExtras();
+            if (bundle != null ) {
+                String tempName = bundle.getString("templateName");
+                String repeats = bundle.getString("templateRepeats");
+                editTextTaskName.setText(tempName);
+
+                setRepeatsValue(repeats);
+
+            }
+        } else {
+
+            setTitle("Edit Task");
+
+
+            getLoaderManager().initLoader(EXISTING_VEHICLE_LOADER, null, this);
+        }
+
+
+
+
 
         dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
         timeFormat = new SimpleDateFormat( "hh:mm a", Locale.US);
 
-        /*  */
-        Bundle bundle = getIntent().getExtras();
-        if (bundle != null ) {
-            String tempName = bundle.getString("templateName");
-            repeats = bundle.getString("templateRepeats");
-            editTextTaskName.setText(tempName);
 
-            setRepeatsValue();
 
-        }
 
         // Create calendar for start date and set initial display of start date and time.
         calStart = Calendar.getInstance();
@@ -93,6 +137,31 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         tvEndDate.setOnClickListener(this);
         tvEndTime.setOnClickListener(this);
         buttonSaveTask.setOnClickListener(this);
+
+        // To save state on device rotation
+        if (savedInstanceState != null) {
+            String savedName = savedInstanceState.getString(KEY_NAME);
+            editTextTaskName.setText(savedName);
+
+            String savedStartDate = savedInstanceState.getString(KEY_START_DATE);
+            tvStartDate.setText(savedStartDate);
+
+            String savedStartTime = savedInstanceState.getString(KEY_START_TIME);
+            tvStartTime.setText(savedStartTime);
+
+            String savedEndDate = savedInstanceState.getString(KEY_END_DATE);
+            tvEndDate.setText(savedEndDate);
+
+            String savedEndTime = savedInstanceState.getString(KEY_END_TIME);
+            tvEndTime.setText(savedEndTime);
+
+            String savedRepeats = savedInstanceState.getString(KEY_REPEATS);
+            setRepeatsValue(savedRepeats);
+
+            String savedNotes = savedInstanceState.getString(KEY_NOTES);
+            editTextNotes.setText(savedNotes);
+
+        }
 
         // Listener for start date DatePicker. Gets date picked and displays to start date textview.
         // Resets end date to the same as start date.
@@ -143,9 +212,22 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    @Override
+    protected void onSaveInstanceState (Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putCharSequence(KEY_NAME, editTextTaskName.getText());
+        outState.putCharSequence(KEY_START_TIME, tvStartTime.getText());
+        outState.putCharSequence(KEY_START_DATE, tvStartDate.getText());
+        outState.putCharSequence(KEY_END_TIME, tvEndTime.getText());
+        outState.putCharSequence(KEY_END_DATE, tvEndDate.getText());
+        outState.putCharSequence(KEY_REPEATS, spinner.getSelectedItem().toString());
+        outState.putCharSequence(KEY_NOTES, editTextNotes.getText());
+    }
+
     // Gets string array of spinner options. Compares the options to the repeat value of
     // template. Sets spinner selected value to that option.
-    private void setRepeatsValue() {
+    private void setRepeatsValue(String repeats) {
         String[] repeatStrings = this.getResources().getStringArray(R.array.repeat_options);
         for (int i = 0; i < repeatStrings.length; i++)
         {
@@ -168,17 +250,56 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     public void saveTask() {
 
         String name = editTextTaskName.getText().toString();
-        String notes = editTextNotes.getText().toString();
+        String startDate = dateFormat.format(calStart.getTime());
+        String startTime = timeFormat.format(calStart.getTime());
+        String endDate = dateFormat.format(calEnd.getTime());
+        String endTime = timeFormat.format(calEnd.getTime());
         String repeats = String.valueOf(spinner.getSelectedItem());
-        boolean insertData = dbHelper.addTask(name, dateFormat.format(calStart.getTime()), timeFormat.format(calStart.getTime()), dateFormat.format(calEnd.getTime()), timeFormat.format(calEnd.getTime()), repeats, notes);
-        if(insertData) {
-            Toast.makeText(this, "Task Saved!", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            setAlarm();
-        }
+        String notes = editTextNotes.getText().toString();
 
-        else Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+        ContentValues values = new ContentValues();
+
+        values.put(Contract.TaskEntry.KEY_NAME, name);
+        values.put(Contract.TaskEntry.KEY_START_DATE, startDate);
+        values.put(Contract.TaskEntry.KEY_START_TIME, startTime);
+        values.put(Contract.TaskEntry.KEY_END_DATE, endDate);
+        values.put(Contract.TaskEntry.KEY_END_TIME, endTime);
+        values.put(Contract.TaskEntry.KEY_REPEATS, repeats);
+        values.put(Contract.TaskEntry.KEY_NOTES, notes);
+
+        if (mCurrentReminderUri == null) {
+            // This is a NEW reminder, so insert a new reminder into the provider,
+            // returning the content URI for the new reminder.
+            Uri newUri = getContentResolver().insert(Contract.TaskEntry.CONTENT_URI, values);
+
+            // Show a toast message depending on whether or not the insertion was successful.
+            if (newUri == null) {
+                // If the new content URI is null, then there was an error with insertion.
+                Toast.makeText(this, "Something went wrong.",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the insertion was successful and we can display a toast.
+                Toast.makeText(this, "Task Saved!",
+                        Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+                setAlarm();
+            }
+        } else {
+            int rowsAffected = getContentResolver().update(mCurrentReminderUri, values, null, null);
+
+                // Show a toast message depending on whether or not the update was successful.
+                if (rowsAffected == 0) {
+                    // If no rows were affected, then there was an error with the update.
+                    Toast.makeText(this, "Something went wrong.",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    // Otherwise, the update was successful and we can display a toast.
+                    Toast.makeText(this, "Task Updated!",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+
 
     }
 
@@ -186,15 +307,12 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         long interval = 0;
         Intent intent = new Intent(getApplicationContext(), Alarm.class);
         intent.putExtra("taskName", editTextTaskName.getText().toString());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        final int _id = (int) System.currentTimeMillis();
+        intent.putExtra("alarmID", _id);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), _id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
 
-        /*
-            Intent intent = new Intent(load.this, AlarmReceiver.class);
-            final int _id = (int) System.currentTimeMillis();
-            PendingIntent appIntent = PendingIntent.getBroadcast(this, _id, intent,PendingIntent.FLAG_ONE_SHOT);
-         */
 
         if (alarmManager != null) {
             if (spinner.getSelectedItem().toString().equals("Never")) {
@@ -288,6 +406,70 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
         }
 
+
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        String[] projection = {
+                Contract.TaskEntry._ID,
+                Contract.TaskEntry.KEY_NAME,
+                Contract.TaskEntry.KEY_START_DATE,
+                Contract.TaskEntry.KEY_START_TIME,
+                Contract.TaskEntry.KEY_END_DATE,
+                Contract.TaskEntry.KEY_END_TIME,
+                Contract.TaskEntry.KEY_REPEATS,
+                Contract.TaskEntry.KEY_NOTES,
+        };
+
+        // This loader will execute the ContentProvider's query method on a background thread
+        return new CursorLoader(this,   // Parent activity context
+                mCurrentReminderUri,         // Query the content URI for the current reminder
+                projection,             // Columns to include in the resulting Cursor
+                null,                   // No selection clause
+                null,                   // No selection arguments
+                null);                  // Default sort order
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        if (cursor == null || cursor.getCount() < 1) {
+            return;
+        }
+
+        // Proceed with moving to the first row of the cursor and reading data from it
+        // (This should be the only row in the cursor)
+        if (cursor.moveToFirst()) {
+            int nameColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NAME);
+            int startDateColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_START_DATE);
+            int startTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_START_TIME);
+            int endDateColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_DATE);
+            int endTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_TIME);
+            int repeatsColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_REPEATS);
+            int notesColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NOTES);
+
+            // Extract out the value from the Cursor for the given column index
+            String name = cursor.getString(nameColumnIndex);
+            String startDate = cursor.getString(startDateColumnIndex);
+            String startTime = cursor.getString(startTimeColumnIndex);
+            String endDate = cursor.getString(endDateColumnIndex);
+            String endTime = cursor.getString(endTimeColumnIndex);
+            String repeats = cursor.getString(repeatsColumnIndex);
+            String notes = cursor.getString(notesColumnIndex);
+
+            // Update the views on the screen with the values from the database
+            editTextTaskName.setText(name);
+            tvStartDate.setText(startDate);
+            tvStartTime.setText(startTime);
+            tvEndDate.setText(endDate);
+            tvEndTime.setText(endTime);
+            setRepeatsValue(repeats);
+            editTextNotes.setText(notes);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
 
     }
 }

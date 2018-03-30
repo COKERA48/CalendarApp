@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/CalendarApp.iml" filepath="$PROJECT_DIR$/CalendarApp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/CalendarApp.iml" filepath="$PROJECT_DIR$/.idea/CalendarApp.iml" />
+      <module fileurl="file://C:\Users\Matts\AndroidStudioProjects\CalendarApp\CalendarApp.iml" filepath="C:\Users\Matts\AndroidStudioProjects\CalendarApp\CalendarApp.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

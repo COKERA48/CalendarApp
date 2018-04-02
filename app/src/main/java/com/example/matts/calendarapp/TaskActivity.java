@@ -18,7 +18,6 @@ import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -28,10 +27,12 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.matts.calendarapp.data.Contract;
+import com.example.matts.calendarapp.data.DatabaseHelper;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 
 public class TaskActivity extends AppCompatActivity implements View.OnClickListener, LoaderManager.LoaderCallbacks<Cursor> {
@@ -40,15 +41,14 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private DatePickerDialog.OnDateSetListener StartDateSetListener, EndDateSetListener;
     private TimePickerDialog.OnTimeSetListener StartTimeSetListener, EndTimeSetListener;
     Calendar calStart, calEnd;
-    DatabaseHelper dbHelper;
-    private Button buttonSaveTask;
+    private Button buttonSaveTask, buttonDeleteTask;
     private static final String TAG = "TaskActivity";
     Spinner spinner;
     DateFormat dateFormat, timeFormat;
+    String sourceClass = "";
 
 
     private Uri mCurrentReminderUri;
-    private boolean mVehicleHasChanged = false;
 
     private static final int EXISTING_VEHICLE_LOADER = 0;
 
@@ -61,13 +61,6 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     private static final String KEY_REPEATS = "repeats_key";
     private static final String KEY_NOTES = "notes_key";
 
-    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            mVehicleHasChanged = true;
-            return false;
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,41 +74,32 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         tvEndTime = findViewById(R.id.tvEndTime);
         editTextNotes = findViewById(R.id.editTextNotes);
         buttonSaveTask = findViewById(R.id.buttonSaveTask);
+        buttonDeleteTask = findViewById(R.id.buttonDeleteTask);
         spinner = findViewById(R.id.spinner);
-        dbHelper = new DatabaseHelper(this);
         Intent intent = getIntent();
         mCurrentReminderUri = intent.getData();
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null) {
+            sourceClass = bundle.getString("ClassName");
+        }
 
-        if (mCurrentReminderUri == null) {
-
+        if (sourceClass.equals("TemplateActivity")) {
+        Log.d(TAG, "test");
             setTitle("New Task");
 
-            Bundle bundle = getIntent().getExtras();
-            if (bundle != null ) {
-                String tempName = bundle.getString("templateName");
-                String repeats = bundle.getString("templateRepeats");
-                editTextTaskName.setText(tempName);
+            getLoaderManager().initLoader(1, null, this);
 
-                setRepeatsValue(repeats);
-
-            }
+            buttonDeleteTask.setVisibility(View.GONE);
         } else {
 
             setTitle("Edit Task");
-
+            buttonSaveTask.setText("Update Task");
 
             getLoaderManager().initLoader(EXISTING_VEHICLE_LOADER, null, this);
         }
 
-
-
-
-
         dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
         timeFormat = new SimpleDateFormat( "hh:mm a", Locale.US);
-
-
-
 
         // Create calendar for start date and set initial display of start date and time.
         calStart = Calendar.getInstance();
@@ -137,6 +121,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         tvEndDate.setOnClickListener(this);
         tvEndTime.setOnClickListener(this);
         buttonSaveTask.setOnClickListener(this);
+        buttonDeleteTask.setOnClickListener(this);
 
         // To save state on device rotation
         if (savedInstanceState != null) {
@@ -267,7 +252,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         values.put(Contract.TaskEntry.KEY_REPEATS, repeats);
         values.put(Contract.TaskEntry.KEY_NOTES, notes);
 
-        if (mCurrentReminderUri == null) {
+        if (sourceClass.equals("TemplateActivity")) {
             // This is a NEW reminder, so insert a new reminder into the provider,
             // returning the content URI for the new reminder.
             Uri newUri = getContentResolver().insert(Contract.TaskEntry.CONTENT_URI, values);
@@ -281,8 +266,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 // Otherwise, the insertion was successful and we can display a toast.
                 Toast.makeText(this, "Task Saved!",
                         Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 setAlarm();
             }
         } else {
@@ -297,6 +281,8 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                     // Otherwise, the update was successful and we can display a toast.
                     Toast.makeText(this, "Task Updated!",
                             Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(getApplicationContext(), MainActivity.class));
+
                 }
             }
 
@@ -403,32 +389,82 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.buttonSaveTask:
                 saveTask();
                 break;
+            case R.id.buttonDeleteTask:
+                deleteTask();
+                break;
 
         }
 
 
     }
 
+    private void deleteTask() {
+
+            // Only perform the delete if this is an existing reminder.
+            if (!sourceClass.equals("TemplateActivity")) {
+                // Call the ContentResolver to delete the reminder at the given content URI.
+                // Pass in null for the selection and selection args because the mCurrentreminderUri
+                // content URI already identifies the reminder that we want.
+                int rowsDeleted = getContentResolver().delete(mCurrentReminderUri, null, null);
+
+                // Show a toast message depending on whether or not the delete was successful.
+                if (rowsDeleted == 0) {
+                    // If no rows were deleted, then there was an error with the delete.
+                    Toast.makeText(this, "Error Deleting Task.",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    // Otherwise, the delete was successful and we can display a toast.
+                    Toast.makeText(this, "Task Deleted!",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+
+        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+
+    }
+
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        String[] projection = {
-                Contract.TaskEntry._ID,
-                Contract.TaskEntry.KEY_NAME,
-                Contract.TaskEntry.KEY_START_DATE,
-                Contract.TaskEntry.KEY_START_TIME,
-                Contract.TaskEntry.KEY_END_DATE,
-                Contract.TaskEntry.KEY_END_TIME,
-                Contract.TaskEntry.KEY_REPEATS,
-                Contract.TaskEntry.KEY_NOTES,
-        };
+        CursorLoader loader = null;
+        switch (i){
+            case EXISTING_VEHICLE_LOADER:
+                String[] projection = {
+                        Contract.TaskEntry._ID1,
+                        Contract.TaskEntry.KEY_NAME,
+                        Contract.TaskEntry.KEY_START_DATE,
+                        Contract.TaskEntry.KEY_START_TIME,
+                        Contract.TaskEntry.KEY_END_DATE,
+                        Contract.TaskEntry.KEY_END_TIME,
+                        Contract.TaskEntry.KEY_REPEATS,
+                        Contract.TaskEntry.KEY_NOTES,
+                };
 
-        // This loader will execute the ContentProvider's query method on a background thread
-        return new CursorLoader(this,   // Parent activity context
-                mCurrentReminderUri,         // Query the content URI for the current reminder
-                projection,             // Columns to include in the resulting Cursor
-                null,                   // No selection clause
-                null,                   // No selection arguments
-                null);                  // Default sort order
+                // This loader will execute the ContentProvider's query method on a background thread
+                loader = new CursorLoader(this,   // Parent activity context
+                        mCurrentReminderUri,         // Query the content URI for the current reminder
+                        projection,             // Columns to include in the resulting Cursor
+                        null,                   // No selection clause
+                        null,                   // No selection arguments
+                        null);                  // Default sort order
+                break;
+            case 1:
+                String[] projection2 = {
+                        Contract.TemplateEntry._ID3,
+                        Contract.TemplateEntry.KEY_NAME,
+                        Contract.TemplateEntry.KEY_REPEATS,
+                        Contract.TemplateEntry.KEY_TEMP_CAT
+                };
+                loader = new CursorLoader(this,   // Parent activity context
+                        mCurrentReminderUri,         // Query the content URI for the current reminder
+                        projection2,             // Columns to include in the resulting Cursor
+                        null,                   // No selection clause
+                        null,                   // No selection arguments
+                        null);                  // Default sort order
+                break;
+            default:
+                return null;
+        }
+        return loader;
     }
 
     @Override
@@ -437,35 +473,53 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
             return;
         }
 
-        // Proceed with moving to the first row of the cursor and reading data from it
-        // (This should be the only row in the cursor)
-        if (cursor.moveToFirst()) {
-            int nameColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NAME);
-            int startDateColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_START_DATE);
-            int startTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_START_TIME);
-            int endDateColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_DATE);
-            int endTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_TIME);
-            int repeatsColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_REPEATS);
-            int notesColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NOTES);
+        switch (loader.getId()) {
+            case 0:
+                // Proceed with moving to the first row of the cursor and reading data from it
+                // (This should be the only row in the cursor)
+                if (cursor.moveToFirst()) {
+                    int nameColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NAME);
+                    int startDateColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_START_DATE);
+                    int startTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_START_TIME);
+                    int endDateColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_DATE);
+                    int endTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_TIME);
+                    int repeatsColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_REPEATS);
+                    int notesColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NOTES);
 
-            // Extract out the value from the Cursor for the given column index
-            String name = cursor.getString(nameColumnIndex);
-            String startDate = cursor.getString(startDateColumnIndex);
-            String startTime = cursor.getString(startTimeColumnIndex);
-            String endDate = cursor.getString(endDateColumnIndex);
-            String endTime = cursor.getString(endTimeColumnIndex);
-            String repeats = cursor.getString(repeatsColumnIndex);
-            String notes = cursor.getString(notesColumnIndex);
+                    // Extract out the value from the Cursor for the given column index
+                    String name = cursor.getString(nameColumnIndex);
+                    String startDate = cursor.getString(startDateColumnIndex);
+                    String startTime = cursor.getString(startTimeColumnIndex);
+                    String endDate = cursor.getString(endDateColumnIndex);
+                    String endTime = cursor.getString(endTimeColumnIndex);
+                    String repeats = cursor.getString(repeatsColumnIndex);
+                    String notes = cursor.getString(notesColumnIndex);
 
-            // Update the views on the screen with the values from the database
-            editTextTaskName.setText(name);
-            tvStartDate.setText(startDate);
-            tvStartTime.setText(startTime);
-            tvEndDate.setText(endDate);
-            tvEndTime.setText(endTime);
-            setRepeatsValue(repeats);
-            editTextNotes.setText(notes);
+                    // Update the views on the screen with the values from the database
+                    editTextTaskName.setText(name);
+                    tvStartDate.setText(startDate);
+                    tvStartTime.setText(startTime);
+                    tvEndDate.setText(endDate);
+                    tvEndTime.setText(endTime);
+                    setRepeatsValue(repeats);
+                    editTextNotes.setText(notes);
+                }
+                break;
+            case 1:
+                if (cursor.moveToFirst()){
+
+                    int nameColumnIndex = cursor.getColumnIndex(Contract.TemplateEntry.KEY_NAME);
+                    int repeatsColumnIndex = cursor.getColumnIndex(Contract.TemplateEntry.KEY_REPEATS);
+
+                    String name = cursor.getString(nameColumnIndex);
+                    String repeats = cursor.getString(repeatsColumnIndex);
+
+                    editTextTaskName.setText(name);
+                    setRepeatsValue(repeats);
+                }
+                break;
         }
+
     }
 
     @Override

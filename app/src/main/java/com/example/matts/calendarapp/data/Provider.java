@@ -1,4 +1,4 @@
-package com.example.matts.calendarapp;
+package com.example.matts.calendarapp.data;
 
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -19,17 +19,28 @@ public class Provider extends ContentProvider{
     public static final String LOG_TAG = Provider.class.getSimpleName();
 
     private static final int REMINDER = 100;
-
     private static final int REMINDER_ID = 101;
+
+    private static final int CATEGORY = 200;
+    private static final int CATEGORY_ID = 201;
+
+    private static final int TEMPLATE = 300;
+    private static final int TEMPLATE_ID = 301;
+
 
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
 
-        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE, REMINDER);
+        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE1, REMINDER);
+        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE1 + "/#", REMINDER_ID);
 
-        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE + "/#", REMINDER_ID);
+        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE2, CATEGORY);
+        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE2 + "/#", CATEGORY_ID);
+
+        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE3, TEMPLATE);
+        sUriMatcher.addURI(Contract.CONTENT_AUTHORITY, Contract.PATH_VEHICLE3 + "/#", TEMPLATE_ID);
 
     }
 
@@ -57,10 +68,32 @@ public class Provider extends ContentProvider{
                         null, null, sortOrder);
                 break;
             case REMINDER_ID:
-                selection = Contract.TaskEntry._ID + "=?";
+                selection = Contract.TaskEntry._ID1 + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
 
                 cursor = database.query(Contract.TaskEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+            case CATEGORY:
+                cursor = database.query(Contract.CategoryEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+            case CATEGORY_ID:
+                selection = Contract.CategoryEntry._ID2 + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+
+                cursor = database.query(Contract.CategoryEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+            case TEMPLATE:
+                cursor = database.query(Contract.TemplateEntry.TABLE_NAME, projection, selection, selectionArgs,
+                        null, null, sortOrder);
+                break;
+            case TEMPLATE_ID:
+                selection = Contract.TemplateEntry._ID3 + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+
+                cursor = database.query(Contract.TemplateEntry.TABLE_NAME, projection, selection, selectionArgs,
                         null, null, sortOrder);
                 break;
             default:
@@ -81,6 +114,14 @@ public class Provider extends ContentProvider{
                 return Contract.TaskEntry.CONTENT_LIST_TYPE;
             case REMINDER_ID:
                 return Contract.TaskEntry.CONTENT_ITEM_TYPE;
+            case CATEGORY:
+                return Contract.CategoryEntry.CONTENT_LIST_TYPE;
+            case CATEGORY_ID:
+                return Contract.CategoryEntry.CONTENT_ITEM_TYPE;
+            case TEMPLATE:
+                return Contract.TemplateEntry.CONTENT_LIST_TYPE;
+            case TEMPLATE_ID:
+                return Contract.TemplateEntry.CONTENT_ITEM_TYPE;
             default:
                 throw new IllegalStateException("Unknown URI " + uri + " with match " + match);
         }
@@ -93,7 +134,8 @@ public class Provider extends ContentProvider{
         switch (match) {
             case REMINDER:
                 return insertReminder(uri, contentValues);
-
+            case CATEGORY:
+                return insertCategory(uri, contentValues);
             default:
                 throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }
@@ -104,6 +146,21 @@ public class Provider extends ContentProvider{
         SQLiteDatabase database = mDbHelper.getWritableDatabase();
 
         long id = database.insert(Contract.TaskEntry.TABLE_NAME, null, values);
+
+        if (id == -1) {
+            Log.e(LOG_TAG, "Failed to insert row for " + uri);
+            return null;
+        }
+
+        getContext().getContentResolver().notifyChange(uri, null);
+
+        return ContentUris.withAppendedId(uri, id);
+    }
+
+    private Uri insertCategory(Uri uri, ContentValues values) {
+        SQLiteDatabase database = mDbHelper.getWritableDatabase();
+
+        long id = database.insert(Contract.CategoryEntry.TABLE_NAME, null, values);
 
         if (id == -1) {
             Log.e(LOG_TAG, "Failed to insert row for " + uri);
@@ -129,10 +186,11 @@ public class Provider extends ContentProvider{
                 rowsDeleted = database.delete(Contract.TaskEntry.TABLE_NAME, selection, selectionArgs);
                 break;
             case REMINDER_ID:
-                selection = Contract.TaskEntry._ID + "=?";
+                selection = Contract.TaskEntry._ID1 + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
                 rowsDeleted = database.delete(Contract.TaskEntry.TABLE_NAME, selection, selectionArgs);
                 break;
+
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
         }
@@ -152,7 +210,7 @@ public class Provider extends ContentProvider{
             case REMINDER:
                 return updateReminder(uri, contentValues, selection, selectionArgs);
             case REMINDER_ID:
-                selection = Contract.TaskEntry._ID + "=?";
+                selection = Contract.TaskEntry._ID1 + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
                 return updateReminder(uri, contentValues, selection, selectionArgs);
             default:

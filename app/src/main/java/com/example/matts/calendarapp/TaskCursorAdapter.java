@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.TextView;
 
+import com.example.matts.calendarapp.data.Contract;
+
 /**
  * Created by Matts on 3/29/2018.
  */

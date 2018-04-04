@@ -68,7 +68,8 @@ public class ListTasksActivity extends AppCompatActivity implements LoaderManage
                 Contract.TaskEntry.KEY_END_DATE,
                 Contract.TaskEntry.KEY_END_TIME,
                 Contract.TaskEntry.KEY_REPEATS,
-                Contract.TaskEntry.KEY_NOTES
+                Contract.TaskEntry.KEY_NOTES,
+                Contract.TaskEntry.KEY_TIMESTAMP
 
         };
 

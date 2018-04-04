@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
         toggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+
         NavigationView navigation = findViewById(R.id.navigationView);
         navigation.setNavigationItemSelectedListener(this);
 
@@ -90,7 +91,8 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
                 Contract.TaskEntry.KEY_END_DATE,
                 Contract.TaskEntry.KEY_END_TIME,
                 Contract.TaskEntry.KEY_REPEATS,
-                Contract.TaskEntry.KEY_NOTES
+                Contract.TaskEntry.KEY_NOTES,
+                Contract.TaskEntry.KEY_TIMESTAMP
 
         };
 
@@ -105,7 +107,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
                 projection,             // Columns to include in the resulting Cursor
                 selection,                   // No selection clause
                 null,                   // No selection arguments
-                null);                  // Default sort order
+                null );                  // Default sort order
 
     }
 

@@ -23,15 +23,20 @@ public class Alarm extends BroadcastReceiver {
     private static final String TAG = "Alarm";
     private String taskName;
     private int id;
+    private long interval, initialTime;
+    Calendar c;
     @Override
     public void onReceive(Context context, Intent intent) {
-        Calendar c = Calendar.getInstance();
-        Log.d(TAG, "Alarm worked." + c.getTime().toString());
+        c = Calendar.getInstance();
+
         Bundle bundle = intent.getExtras();
         if (bundle != null ) {
             taskName = bundle.getString("taskName");
             id = bundle.getInt("alarmID");
+            interval = bundle.getLong("interval");
+            initialTime = bundle.getLong("initialTime");
         }
+        Log.d(TAG, "Alarm worked." + c.getTime().toString() + " initialTime: " + initialTime + " interval: " + interval);
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -50,6 +55,27 @@ public class Alarm extends BroadcastReceiver {
         }
         notificationManager.notify(id,builder.build());
 
-
+        if (interval != 0) {
+            rescheduleAlarm(context, intent);
+        }
     }
+
+    public void rescheduleAlarm(Context context, Intent intent) {
+
+        initialTime += interval;
+        intent.putExtra("initialTime", initialTime);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context.getApplicationContext(), id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        if (alarmManager != null) {
+            if (Build.VERSION.SDK_INT >= 19) {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, initialTime, pendingIntent);
+
+            }
+            else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, initialTime, pendingIntent);
+            }
+        }
+    }
+
 }

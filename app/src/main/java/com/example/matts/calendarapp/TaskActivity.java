@@ -49,7 +49,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     Spinner spinner;
     DateFormat dateFormat, timeFormat;
     String sourceClass = "";
-    int timestamp = 0;
+    int alarmId = 0;
+    Uri newUri;
+    long timestamp;
 
 
     private Uri mCurrentReminderUri;
@@ -245,8 +247,22 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         String endTime = timeFormat.format(calEnd.getTime());
         String repeats = String.valueOf(spinner.getSelectedItem());
         String notes = editTextNotes.getText().toString();
-        if (timestamp == 0) {
-            timestamp = (int)System.currentTimeMillis();
+
+        String startDateTime = startDate + " " + startTime;
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy hh:mm a", Locale.US);
+        Calendar c = Calendar.getInstance();
+        try {
+            Date start = df.parse(startDateTime);
+            c.setTimeInMillis(start.getTime());
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        long timestamp = c.getTimeInMillis();
+        Log.d(TAG, "sort time: " + timestamp);
+
+        if (alarmId == 0) {
+            alarmId = (int)System.currentTimeMillis();
         }
 
         ContentValues values = new ContentValues();
@@ -258,12 +274,14 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         values.put(Contract.TaskEntry.KEY_END_TIME, endTime);
         values.put(Contract.TaskEntry.KEY_REPEATS, repeats);
         values.put(Contract.TaskEntry.KEY_NOTES, notes);
+        values.put(Contract.TaskEntry.KEY_ALARM_ID, alarmId);
         values.put(Contract.TaskEntry.KEY_TIMESTAMP, timestamp);
 
         if (sourceClass.equals("TemplateActivity")) {
             // This is a NEW reminder, so insert a new reminder into the provider,
             // returning the content URI for the new reminder.
-            Uri newUri = getContentResolver().insert(Contract.TaskEntry.CONTENT_URI, values);
+            newUri = getContentResolver().insert(Contract.TaskEntry.CONTENT_URI, values);
+
 
             // Show a toast message depending on whether or not the insertion was successful.
             if (newUri == null) {
@@ -275,7 +293,11 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(this, "Task Saved!",
                         Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                setAlarm();
+                Calendar now = Calendar.getInstance();
+                if(calStart.compareTo(now) > 0) {
+                    setAlarm();
+                }
+
             }
         } else {
             int rowsAffected = getContentResolver().update(mCurrentReminderUri, values, null, null);
@@ -290,8 +312,10 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(this, "Task Updated!",
                         Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(getApplicationContext(), MainActivity.class));
-                deleteAlarm();
-                setAlarm();
+                Calendar now = Calendar.getInstance();
+                if(calStart.compareTo(now) > 0) {
+                    setAlarm();
+                }
             }
         }
 
@@ -325,12 +349,19 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         long initialTime = calStart.getTimeInMillis();
 
         Intent intent = new Intent(getApplicationContext(), Alarm.class);
-        intent.putExtra("taskName", editTextTaskName.getText().toString());
-        intent.putExtra("alarmID", timestamp);
+
+        if (newUri != null) {
+            intent.setData(newUri);
+
+        }
+        else intent.setData(mCurrentReminderUri);
+
+        //intent.putExtra("taskName", editTextTaskName.getText().toString());
+       // intent.putExtra("alarmID", alarmId);
         intent.putExtra("initialTime", initialTime);
         intent.putExtra("interval", interval);
 
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), timestamp, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
         if (alarmManager != null) {
@@ -350,7 +381,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
     public void deleteAlarm() {
         Intent intent = new Intent(getApplicationContext(), Alarm.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), timestamp, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (alarmManager != null) {
             alarmManager.cancel(pendingIntent);
@@ -443,6 +474,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                         Contract.TaskEntry.KEY_END_TIME,
                         Contract.TaskEntry.KEY_REPEATS,
                         Contract.TaskEntry.KEY_NOTES,
+                        Contract.TaskEntry.KEY_ALARM_ID,
                         Contract.TaskEntry.KEY_TIMESTAMP
                 };
 
@@ -492,6 +524,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                     int endTimeColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_END_TIME);
                     int repeatsColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_REPEATS);
                     int notesColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_NOTES);
+                    int alarmIdColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_ALARM_ID);
                     int timestampColumnIndex = cursor.getColumnIndex(Contract.TaskEntry.KEY_TIMESTAMP);
 
                     // Extract out the value from the Cursor for the given column index
@@ -502,7 +535,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                     String endTime = cursor.getString(endTimeColumnIndex);
                     String repeats = cursor.getString(repeatsColumnIndex);
                     String notes = cursor.getString(notesColumnIndex);
-                    timestamp = cursor.getInt(timestampColumnIndex);
+                    alarmId = cursor.getInt(alarmIdColumnIndex);
+                    timestamp = cursor.getLong(timestampColumnIndex);
+
 
                     // Update the views on the screen with the values from the database
                     editTextTaskName.setText(name);
@@ -515,11 +550,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
 
                     // Set calendar objects with date and time values from database
                     try {
-                        String startDateTime = startDate + " " + startTime;
                         String endDateTime = endDate + " " + endTime;
                         DateFormat df = new SimpleDateFormat("MM/dd/yyyy hh:mm a", Locale.US);
-                        Date start = df.parse(startDateTime);
-                        calStart.setTimeInMillis(start.getTime());
+                        calStart.setTimeInMillis(timestamp);
                         Date end = df.parse(endDateTime);
                         calEnd.setTimeInMillis(end.getTime());
 

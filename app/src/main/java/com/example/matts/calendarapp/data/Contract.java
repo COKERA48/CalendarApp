@@ -40,7 +40,8 @@ public class Contract {
         public static final String KEY_END_TIME = "end_time";
         public static final String KEY_REPEATS = "repeats";
         public static final String KEY_NOTES = "notes";
-        public static final String KEY_TIMESTAMP = "timestamp";
+        public static final String KEY_ALARM_ID = "alarm_id";
+        public static final String KEY_TIMESTAMP = "start_time_in_millis";
 
     }
 

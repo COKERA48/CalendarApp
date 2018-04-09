@@ -45,13 +45,15 @@ public class TemplateActivity extends AppCompatActivity implements LoaderManager
         ContentResolver mResolver = this.getContentResolver();
         Cursor cursor = mResolver.query(mCurrentReminderUri, new String[] {
                 Contract.CategoryEntry._ID2, Contract.CategoryEntry.KEY_NAME, Contract.CategoryEntry.KEY_ICON }, null, null, null);
-        if (cursor.moveToFirst()) {
-                catId = cursor.getInt(cursor
-                        .getColumnIndex(Contract.CategoryEntry._ID2));
-                catName = cursor.getString(cursor.getColumnIndex(Contract.CategoryEntry.KEY_NAME));
-                catIcon = cursor.getInt(cursor.getColumnIndex(Contract.CategoryEntry.KEY_ICON));
-
+        if (cursor != null && cursor.moveToFirst()) {
+            catId = cursor.getInt(cursor
+                    .getColumnIndex(Contract.CategoryEntry._ID2));
+            catName = cursor.getString(cursor.getColumnIndex(Contract.CategoryEntry.KEY_NAME));
+            catIcon = cursor.getInt(cursor.getColumnIndex(Contract.CategoryEntry.KEY_ICON));
+            cursor.close();
         }
+
+
         image = (ImageView) findViewById(R.id.image);
         image.setImageResource(catIcon);
         TextView textViewCatName = findViewById(R.id.textViewCatName);

@@ -13,6 +13,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -23,8 +24,10 @@ import android.widget.SimpleCursorAdapter;
 import com.example.matts.calendarapp.data.Contract;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor>{
@@ -92,6 +95,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
                 Contract.TaskEntry.KEY_END_TIME,
                 Contract.TaskEntry.KEY_REPEATS,
                 Contract.TaskEntry.KEY_NOTES,
+                Contract.TaskEntry.KEY_ALARM_ID,
                 Contract.TaskEntry.KEY_TIMESTAMP
 
         };
@@ -102,12 +106,16 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
         String selection = "(" + Contract.TaskEntry.KEY_START_DATE + " = '" + selectDate + "')";
 
 
+
+
+
+
         return new CursorLoader(this,   // Parent activity context
                 Contract.TaskEntry.CONTENT_URI,   // Provider content URI to query
                 projection,             // Columns to include in the resulting Cursor
                 selection,                   // No selection clause
                 null,                   // No selection arguments
-                null );                  // Default sort order
+                Contract.TaskEntry.KEY_TIMESTAMP );                  // Default sort order
 
     }
 

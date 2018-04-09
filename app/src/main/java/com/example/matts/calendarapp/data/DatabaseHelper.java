@@ -15,7 +15,7 @@ import com.example.matts.calendarapp.data.Contract;
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DatabaseHelper";
     private static final String DB_NAME = "quick_mention_db";
-    private static final int DB_VERSION = 28;
+    private static final int DB_VERSION = 32;
 
     DatabaseHelper(Context context)
     {
@@ -36,6 +36,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 Contract.TaskEntry.KEY_END_TIME + " TEXT, " +
                 Contract.TaskEntry.KEY_REPEATS + " TEXT, " +
                 Contract.TaskEntry.KEY_NOTES + " TEXT, " +
+                Contract.TaskEntry.KEY_ALARM_ID + " INTEGER, " +
                 Contract.TaskEntry.KEY_TIMESTAMP + " INTEGER)";
         db.execSQL(createTableTask);
 

@@ -58,6 +58,8 @@ public class Alarm extends BroadcastReceiver {
                         Contract.TaskEntry.KEY_START_TIME,
                         Contract.TaskEntry.KEY_END_DATE,
                         Contract.TaskEntry.KEY_END_TIME,
+                        Contract.TaskEntry.KEY_REPEATS,
+                        Contract.TaskEntry.KEY_NOTES,
                         Contract.TaskEntry.KEY_ALARM_ID,
                         Contract.TaskEntry.KEY_TIMESTAMP},
                 null,
@@ -70,6 +72,8 @@ public class Alarm extends BroadcastReceiver {
             startTime = cursor.getString(cursor.getColumnIndex(Contract.TaskEntry.KEY_START_TIME));
             endDate = cursor.getString(cursor.getColumnIndex(Contract.TaskEntry.KEY_END_DATE));
             endTime = cursor.getString(cursor.getColumnIndex(Contract.TaskEntry.KEY_END_TIME));
+            repeats = cursor.getString(cursor.getColumnIndex(Contract.TaskEntry.KEY_REPEATS));
+            notes = cursor.getString(cursor.getColumnIndex(Contract.TaskEntry.KEY_NOTES));
             alarmId = cursor.getInt(cursor.getColumnIndex(Contract.TaskEntry.KEY_ALARM_ID));
             timestamp = cursor.getLong(cursor.getColumnIndex(Contract.TaskEntry.KEY_TIMESTAMP));
             cursor.close();
@@ -96,14 +100,14 @@ public class Alarm extends BroadcastReceiver {
 
         if (interval != 0) {
             try {
-                rescheduleAlarm(context, intent);
+                rescheduleAlarm(context);
             } catch (ParseException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void rescheduleAlarm(Context context, Intent intent) throws ParseException {
+    public void rescheduleAlarm(Context context) throws ParseException {
 
         initialTime += interval;
         c.setTimeInMillis(initialTime);
@@ -134,11 +138,17 @@ public class Alarm extends BroadcastReceiver {
         values.put(Contract.TaskEntry.KEY_START_TIME, startTime);
         values.put(Contract.TaskEntry.KEY_END_DATE, endDate);
         values.put(Contract.TaskEntry.KEY_END_TIME, endTime);
+        values.put(Contract.TaskEntry.KEY_REPEATS, repeats);
+        values.put(Contract.TaskEntry.KEY_NOTES, notes);
+        values.put(Contract.TaskEntry.KEY_ALARM_ID, alarmId);
         values.put(Contract.TaskEntry.KEY_TIMESTAMP, timestamp);
 
-        int rowsAffected = context.getContentResolver().update(mCurrentReminderUri, values, null, null);
+        Intent intent = new Intent(context.getApplicationContext(), Alarm.class);
+        Uri newUri = context.getContentResolver().insert(Contract.TaskEntry.CONTENT_URI, values);
+        intent.setData(newUri);
 
         intent.putExtra("initialTime", initialTime);
+        intent.putExtra("interval", interval);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context.getApplicationContext(), alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 

@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.CalendarView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -24,16 +25,17 @@ import android.widget.TextView;
 
 import com.example.matts.calendarapp.data.Contract;
 
-import java.text.DateFormat;
-import java.text.ParseException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor>{
-    private static final String TAG = "MainActivity";
-    private ActionBarDrawerToggle toggle;
+public class CalendarViewActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, NavigationView.OnNavigationItemSelectedListener {
+
+    private ActionBarDrawerToggle menuToggle;
+    private static final String TAG = "CalendarViewActivity";
+    private String selectedDate;
+    private DecimalFormat digitFormatter;
     SimpleCursorAdapter adapter;
 
     private static final int VEHICLE_LOADER = 0;
@@ -41,34 +43,43 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_calendar_view);
+        setTitle("Calendar");
 
-        DrawerLayout drawerLayout = findViewById(R.id.drawer);
-        toggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+        //setup side menu and toggle button
+        NavigationView menu = findViewById(R.id.navigationView);
+        menu.setNavigationItemSelectedListener(this); //have app call onNavigationItemSelected() when menu option is used
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        menuToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
+        drawerLayout.addDrawerListener(menuToggle);
+        menuToggle.syncState();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-
-        NavigationView navigation = findViewById(R.id.navigationView);
-        navigation.setNavigationItemSelectedListener(this);
-
-        ListView listViewUpcomingTasks = (ListView) findViewById(R.id.listViewUpcomingTasks);
+        //setup widgets for this activity
+        CalendarView calendarView = findViewById(R.id.calendarView);
+        calendarView.setOnDateChangeListener(new DateChangeListener());
+        ListView listview = findViewById(R.id.calendarListView);
         TextView textViewNoTasks = findViewById(R.id.textViewNoTasks);
-        listViewUpcomingTasks.setEmptyView(textViewNoTasks);
+
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
+        digitFormatter = new DecimalFormat("00");
+        selectedDate = dateFormat.format(new Date(calendarView.getDate())); //get current date in mm/dd/yyyy
+
+
         adapter = new SimpleCursorAdapter(this,
                 R.layout.single_row_task,
                 null,
                 new String[] { Contract.TaskEntry.KEY_NAME, Contract.TaskEntry.KEY_START_DATE, Contract.TaskEntry.KEY_START_TIME },
                 new int[] { R.id.textViewTaskName, R.id.textViewTaskDate, R.id.textViewTaskTime }, 0);
 
-        listViewUpcomingTasks.setAdapter(adapter);
+        listview.setAdapter(adapter);
 
-        listViewUpcomingTasks.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
 
-                Intent intent = new Intent(MainActivity.this, TaskActivity.class);
+                Intent intent = new Intent(CalendarViewActivity.this, TaskActivity.class);
 
                 Uri currentVehicleUri = ContentUris.withAppendedId(Contract.TaskEntry.CONTENT_URI, id);
 
@@ -82,9 +93,30 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
         });
 
         getLoaderManager().initLoader(VEHICLE_LOADER, null, this);
+        listview.setEmptyView(textViewNoTasks);
     }
 
 
+
+    //listener is called whenever a new date is picked
+    private class DateChangeListener implements CalendarView.OnDateChangeListener
+    {
+        DateChangeListener()
+        {
+
+        }
+
+        @Override
+        public void onSelectedDayChange(CalendarView view, int year, int month, int day)
+        {
+            //formatter makes sure month has leading zero so strings can match
+            selectedDate = digitFormatter.format(month + 1) + "/" + digitFormatter.format(day) + "/" + year;
+            Log.d(TAG, selectedDate);
+
+            getLoaderManager().restartLoader(VEHICLE_LOADER, null, CalendarViewActivity.this);
+
+        }
+    }
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
@@ -102,14 +134,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
 
         };
 
-        Calendar c = Calendar.getInstance();
-        DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
-        String selectDate = dateFormat.format(c.getTime());
-        String selection = "(" + Contract.TaskEntry.KEY_START_DATE + " = '" + selectDate + "')";
-
-
-
-
+        String selection = "(" + Contract.TaskEntry.KEY_START_DATE + " = '" + selectedDate + "')";
 
 
         return new CursorLoader(this,   // Parent activity context
@@ -117,7 +142,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
                 projection,             // Columns to include in the resulting Cursor
                 selection,                   // No selection clause
                 null,                   // No selection arguments
-                Contract.TaskEntry.KEY_TIMESTAMP );                  // Default sort order
+                Contract.TaskEntry.KEY_TIMESTAMP);                  // Default sort order
 
     }
 
@@ -134,32 +159,27 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
 
     }
 
+    //from menu interface
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (toggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+        return menuToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
     }
 
+    //from menu interface
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.home:
+                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                return true;
             case R.id.newTask:
                 startActivity(new Intent(getApplicationContext(), CategoryActivity.class));
                 return true;
             case R.id.allTasks:
                 startActivity(new Intent(getApplicationContext(), ListTasksActivity.class));
                 return true;
-            case R.id.calendar:
-                startActivity(new Intent(getApplicationContext(), CalendarViewActivity.class));
-                return true;
-            case R.id.myTemplates:
-                startActivity(new Intent(getApplicationContext(), MyTemplatesActivity.class));
-                return true;
         }
 
-        return true;
+        return false;
     }
 }

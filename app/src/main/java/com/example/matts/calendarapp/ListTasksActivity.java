@@ -13,9 +13,12 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
 
 import com.example.matts.calendarapp.data.Contract;
 import com.example.matts.calendarapp.data.DatabaseHelper;
+
+import org.w3c.dom.Text;
 
 public class ListTasksActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
 
@@ -29,6 +32,8 @@ public class ListTasksActivity extends AppCompatActivity implements LoaderManage
         setContentView(R.layout.activity_list_tasks);
 
         ListView listView = findViewById(R.id.listView);
+        TextView textViewNoTasks = findViewById(R.id.textViewNoTasks);
+        listView.setEmptyView(textViewNoTasks);
 
         adapter = new SimpleCursorAdapter(this,
                 R.layout.single_row_task,

@@ -15,7 +15,7 @@ import com.example.matts.calendarapp.data.Contract;
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DatabaseHelper";
     private static final String DB_NAME = "quick_mention_db";
-    private static final int DB_VERSION = 32;
+    private static final int DB_VERSION = 35;
 
     DatabaseHelper(Context context)
     {
@@ -59,6 +59,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('Home', " + R.drawable.ic_home + ")");
         db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('Auto', " + R.drawable.ic_auto + ")");
         db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('Health', " + R.drawable.ic_health + ")");
+        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('My Templates', " + R.drawable.ic_person + ")");
+
 
 
 
@@ -66,7 +68,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("INSERT INTO " + Contract.TemplateEntry.TABLE_NAME + "(" + Contract.TemplateEntry.KEY_NAME + ", " +
                 Contract.TemplateEntry.KEY_REPEATS + ", " + Contract.TemplateEntry.KEY_TEMP_CAT + ") VALUES ('Do Laundry', 'Every Week', 1 )");
         db.execSQL("INSERT INTO " + Contract.TemplateEntry.TABLE_NAME + "(" + Contract.TemplateEntry.KEY_NAME + ", " +
-                Contract.TemplateEntry.KEY_REPEATS + ", " + Contract.TemplateEntry.KEY_TEMP_CAT + ") VALUES ('Cut Grass', 'Every 2 Weeks', 1 )");
+                Contract.TemplateEntry.KEY_REPEATS + ", " + Contract.TemplateEntry.KEY_TEMP_CAT + ") VALUES ('Mow Lawn', 'Every 2 Weeks', 1 )");
         db.execSQL("INSERT INTO " + Contract.TemplateEntry.TABLE_NAME + "(" + Contract.TemplateEntry.KEY_NAME + ", " +
                 Contract.TemplateEntry.KEY_REPEATS + ", " + Contract.TemplateEntry.KEY_TEMP_CAT + ") VALUES ('Wash Car', 'Every Week', 2 )");
         db.execSQL("INSERT INTO " + Contract.TemplateEntry.TABLE_NAME + "(" + Contract.TemplateEntry.KEY_NAME + ", " +

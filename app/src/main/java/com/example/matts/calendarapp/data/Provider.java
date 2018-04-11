@@ -136,9 +136,26 @@ public class Provider extends ContentProvider{
                 return insertReminder(uri, contentValues);
             case CATEGORY:
                 return insertCategory(uri, contentValues);
+            case TEMPLATE:
+                return insertTemplate(uri, contentValues);
             default:
                 throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }
+    }
+
+    private Uri insertTemplate(Uri uri, ContentValues values) {
+        SQLiteDatabase database = mDbHelper.getWritableDatabase();
+
+        long id = database.insert(Contract.TemplateEntry.TABLE_NAME, null, values);
+
+        if (id == -1) {
+            Log.e(LOG_TAG, "Failed to insert row for " + uri);
+            return null;
+        }
+
+        getContext().getContentResolver().notifyChange(uri, null);
+
+        return ContentUris.withAppendedId(uri, id);
     }
 
     private Uri insertReminder(Uri uri, ContentValues values) {
@@ -190,6 +207,14 @@ public class Provider extends ContentProvider{
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
                 rowsDeleted = database.delete(Contract.TaskEntry.TABLE_NAME, selection, selectionArgs);
                 break;
+            case TEMPLATE:
+                rowsDeleted = database.delete(Contract.TemplateEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case TEMPLATE_ID:
+                selection = Contract.TemplateEntry._ID3 + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+                rowsDeleted = database.delete(Contract.TemplateEntry.TABLE_NAME, selection, selectionArgs);
+                break;
 
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
@@ -213,9 +238,31 @@ public class Provider extends ContentProvider{
                 selection = Contract.TaskEntry._ID1 + "=?";
                 selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
                 return updateReminder(uri, contentValues, selection, selectionArgs);
+            case TEMPLATE:
+                return updateTemplate(uri, contentValues, selection, selectionArgs);
+            case TEMPLATE_ID:
+                selection = Contract.TemplateEntry._ID3 + "=?";
+                selectionArgs = new String[] { String.valueOf(ContentUris.parseId(uri)) };
+                return updateTemplate(uri, contentValues, selection, selectionArgs);
             default:
                 throw new IllegalArgumentException("Update is not supported for " + uri);
         }
+    }
+
+    private int updateTemplate(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        if (values.size() == 0) {
+            return 0;
+        }
+
+        SQLiteDatabase database = mDbHelper.getWritableDatabase();
+
+        int rowsUpdated = database.update(Contract.TemplateEntry.TABLE_NAME, values, selection, selectionArgs);
+
+        if (rowsUpdated != 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return rowsUpdated;
     }
 
     private int updateReminder(Uri uri, ContentValues values, String selection, String[] selectionArgs) {

@@ -58,6 +58,7 @@ public class Contract {
         public final static String _ID2 = BaseColumns._ID;
         public static final String KEY_NAME = "category_name";
         public static final String KEY_ICON = "icon";
+        public static final String KEY_CREATED_BY_USER = "created_by_user";
     }
 
     public static final class TemplateEntry implements BaseColumns {

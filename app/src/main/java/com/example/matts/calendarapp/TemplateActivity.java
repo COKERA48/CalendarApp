@@ -44,7 +44,7 @@ public class TemplateActivity extends AppCompatActivity implements LoaderManager
 
         ContentResolver mResolver = this.getContentResolver();
         Cursor cursor = mResolver.query(mCurrentReminderUri, new String[] {
-                Contract.CategoryEntry._ID2, Contract.CategoryEntry.KEY_NAME, Contract.CategoryEntry.KEY_ICON }, null, null, null);
+                Contract.CategoryEntry._ID2, Contract.CategoryEntry.KEY_NAME, Contract.CategoryEntry.KEY_ICON, Contract.CategoryEntry.KEY_CREATED_BY_USER }, null, null, null);
         if (cursor != null && cursor.moveToFirst()) {
             catId = cursor.getInt(cursor
                     .getColumnIndex(Contract.CategoryEntry._ID2));

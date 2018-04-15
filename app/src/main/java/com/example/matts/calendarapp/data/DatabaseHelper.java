@@ -15,7 +15,7 @@ import com.example.matts.calendarapp.data.Contract;
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "DatabaseHelper";
     private static final String DB_NAME = "quick_mention_db";
-    private static final int DB_VERSION = 35;
+    private static final int DB_VERSION = 39;
 
     DatabaseHelper(Context context)
     {
@@ -43,7 +43,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String createTableCategory = "CREATE TABLE " + Contract.CategoryEntry.TABLE_NAME + " (" +
                 Contract.CategoryEntry._ID2 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 Contract.CategoryEntry.KEY_NAME + " TEXT, " +
-                Contract.CategoryEntry.KEY_ICON + " INTEGER)";
+                Contract.CategoryEntry.KEY_ICON + " INTEGER, " +
+                Contract.CategoryEntry.KEY_CREATED_BY_USER + " INTEGER)";
         db.execSQL(createTableCategory);
 
 
@@ -56,10 +57,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTableTemplate);
 
         /* Insert values into category table */
-        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('Home', " + R.drawable.ic_home + ")");
-        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('Auto', " + R.drawable.ic_auto + ")");
-        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('Health', " + R.drawable.ic_health + ")");
-        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ") VALUES ('My Templates', " + R.drawable.ic_person + ")");
+        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ", " + Contract.CategoryEntry.KEY_CREATED_BY_USER + ") VALUES ('Home', " + R.drawable.ic_home + ", '0')");
+        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ", " + Contract.CategoryEntry.KEY_CREATED_BY_USER + ") VALUES ('Auto', " + R.drawable.ic_auto + ", '0')");
+        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ", " + Contract.CategoryEntry.KEY_CREATED_BY_USER + ") VALUES ('Health', " + R.drawable.ic_health + ", '0')");
+        db.execSQL("INSERT INTO " + Contract.CategoryEntry.TABLE_NAME + "(" + Contract.CategoryEntry.KEY_NAME + ", " + Contract.CategoryEntry.KEY_ICON + ", " + Contract.CategoryEntry.KEY_CREATED_BY_USER + ") VALUES ('My Templates', " + R.drawable.ic_person + ", '0')");
 
 
 

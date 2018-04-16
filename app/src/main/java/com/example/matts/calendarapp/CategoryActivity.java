@@ -23,6 +23,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.support.v7.widget.Toolbar;
 
 import com.example.matts.calendarapp.data.Contract;
 import com.example.matts.calendarapp.data.DatabaseHelper;
@@ -56,6 +57,9 @@ public class CategoryActivity extends AppCompatActivity implements LoaderManager
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_category);
             setTitle("Choose Category");
+
+            Toolbar toolbar = findViewById(R.id.toolbarCategory);
+            setSupportActionBar(toolbar);
 
             listViewCategories = (ListView) findViewById(R.id.listViewCategories);
             editButton = findViewById(R.id.buttonEdit);
@@ -171,7 +175,8 @@ public class CategoryActivity extends AppCompatActivity implements LoaderManager
                 Contract.CategoryEntry._ID2,
                 Contract.CategoryEntry.KEY_NAME,
                 Contract.CategoryEntry.KEY_ICON,
-                Contract.CategoryEntry.KEY_CREATED_BY_USER
+                Contract.CategoryEntry.KEY_CREATED_BY_USER,
+                Contract.CategoryEntry.KEY_USAGE
 
 
         };
@@ -181,7 +186,7 @@ public class CategoryActivity extends AppCompatActivity implements LoaderManager
                 projection,             // Columns to include in the resulting Cursor
                 null,                   // No selection clause
                 null,                   // No selection arguments
-                null);                  // Default sort order
+                Contract.CategoryEntry.KEY_USAGE + " DESC");                  // Default sort order
     }
 
     @Override

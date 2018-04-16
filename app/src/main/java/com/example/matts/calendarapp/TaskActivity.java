@@ -5,6 +5,7 @@ import android.app.DatePickerDialog;
 import android.app.LoaderManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -18,6 +19,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -52,6 +54,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     int alarmId = 0;
     Uri newUri;
     long timestamp;
+    String templateName, templateRepeats;
+    int idTempCat, usage;
+
 
 
     private Uri mCurrentReminderUri;
@@ -72,6 +77,10 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task);
+
+
+        Toolbar toolbar = findViewById(R.id.toolbarTask);
+        setSupportActionBar(toolbar);
 
         editTextTaskName = findViewById(R.id.editTextTaskName);
         tvStartDate = findViewById(R.id.tvStartDate);
@@ -229,7 +238,7 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public boolean checkTimes() {
-        Calendar now = Calendar.getInstance();
+
         // If start date/time is after end date/time OR start date/time is before now,
         // user may not save task.
         if (calStart.compareTo(calEnd) > 0) {
@@ -237,12 +246,14 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                     Toast.LENGTH_SHORT).show();
             return false;
         }
-
+        //Calendar now = Calendar.getInstance();
+        /*
         if (calStart.compareTo(now) < 0 ) {
             Toast.makeText(this, "Start time must be set to a future time.",
                     Toast.LENGTH_SHORT).show();
             return false;
         }
+        */
         else return true;
 
     }
@@ -293,6 +304,33 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 // This is a NEW reminder, so insert a new reminder into the provider,
                 // returning the content URI for the new reminder.
                 newUri = getContentResolver().insert(Contract.TaskEntry.CONTENT_URI, values);
+
+                usage = usage + 1;
+                ContentValues templateValues = new ContentValues();
+                templateValues.put(Contract.TemplateEntry.KEY_USAGE, usage);
+                getContentResolver().update(mCurrentReminderUri, templateValues, null, null);
+                Log.d(TAG, "template usage: " + usage);
+
+                ContentResolver categoryResolver = this.getContentResolver();
+                String selection = Contract.CategoryEntry._ID2 + " = " + idTempCat;
+                Cursor cursor = categoryResolver.query(Contract.CategoryEntry.CONTENT_URI, new String[] {
+                        Contract.CategoryEntry._ID2, Contract.CategoryEntry.KEY_USAGE }, selection, null, null);
+
+
+                if (cursor != null && cursor.moveToFirst()) {
+                    int catId = cursor.getInt(cursor.getColumnIndex(Contract.CategoryEntry._ID2));
+                    int usageCat = cursor.getInt(cursor.getColumnIndex(Contract.CategoryEntry.KEY_USAGE));
+
+                    usageCat++;
+
+                    ContentValues categoryValues = new ContentValues();
+                    categoryValues.put(Contract.CategoryEntry.KEY_USAGE, usageCat);
+
+                    Uri categoryUri = ContentUris.withAppendedId(Contract.CategoryEntry.CONTENT_URI, catId);
+                    getContentResolver().update(categoryUri, categoryValues, null, null);
+                    Log.d(TAG, "category usage: " + usageCat);
+                }
+
 
 
                 // Show a toast message depending on whether or not the insertion was successful.
@@ -365,8 +403,6 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
         }
         else intent.setData(mCurrentReminderUri);
 
-        //intent.putExtra("taskName", editTextTaskName.getText().toString());
-       // intent.putExtra("alarmID", alarmId);
         intent.putExtra("initialTime", initialTime);
         intent.putExtra("interval", interval);
 
@@ -500,7 +536,9 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                         Contract.TemplateEntry._ID3,
                         Contract.TemplateEntry.KEY_NAME,
                         Contract.TemplateEntry.KEY_REPEATS,
-                        Contract.TemplateEntry.KEY_TEMP_CAT
+                        Contract.TemplateEntry.KEY_TEMP_CAT,
+                        Contract.TemplateEntry.KEY_CREATED_BY_USER,
+                        Contract.TemplateEntry.KEY_USAGE
                 };
                 loader = new CursorLoader(this,   // Parent activity context
                         mCurrentReminderUri,         // Query the content URI for the current reminder
@@ -572,15 +610,19 @@ public class TaskActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case 1:
                 if (cursor.moveToFirst()){
-
                     int nameColumnIndex = cursor.getColumnIndex(Contract.TemplateEntry.KEY_NAME);
                     int repeatsColumnIndex = cursor.getColumnIndex(Contract.TemplateEntry.KEY_REPEATS);
+                    int idTempCatIndex = cursor.getColumnIndex(Contract.TemplateEntry.KEY_TEMP_CAT);
+                    int usageColumnIndex = cursor.getColumnIndex(Contract.TemplateEntry.KEY_USAGE);
 
-                    String name = cursor.getString(nameColumnIndex);
-                    String repeats = cursor.getString(repeatsColumnIndex);
+                    templateName = cursor.getString(nameColumnIndex);
+                    templateRepeats = cursor.getString(repeatsColumnIndex);
+                    idTempCat = cursor.getInt(idTempCatIndex);
+                    usage = cursor.getInt(usageColumnIndex);
 
-                    editTextTaskName.setText(name);
-                    setRepeatsValue(repeats);
+                    editTextTaskName.setText(templateName);
+                    setRepeatsValue(templateRepeats);
+
                 }
                 break;
         }

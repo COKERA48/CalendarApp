@@ -59,6 +59,7 @@ public class Contract {
         public static final String KEY_NAME = "category_name";
         public static final String KEY_ICON = "icon";
         public static final String KEY_CREATED_BY_USER = "created_by_user";
+        public static final String KEY_USAGE = "usage";
     }
 
     public static final class TemplateEntry implements BaseColumns {
@@ -75,6 +76,8 @@ public class Contract {
         public static final String KEY_NAME = "template_name";
         public static final String KEY_REPEATS = "repeats";
         public static final String KEY_TEMP_CAT = "template_category";
+        public static final String KEY_CREATED_BY_USER = "created_by_user";
+        public static final String KEY_USAGE = "usage";
     }
 
 

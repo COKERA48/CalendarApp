@@ -96,13 +96,15 @@ public class Alarm extends BroadcastReceiver {
         } else {
             builder.setSmallIcon(R.drawable.ic_notification);
         }
-        notificationManager.notify(alarmId,builder.build());
+        if(alarmId != 0) {
+            notificationManager.notify(alarmId,builder.build());
 
-        if (interval != 0) {
-            try {
-                rescheduleAlarm(context);
-            } catch (ParseException e) {
-                e.printStackTrace();
+            if (interval != 0) {
+                try {
+                    rescheduleAlarm(context);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -152,7 +154,7 @@ public class Alarm extends BroadcastReceiver {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context.getApplicationContext(), alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        if (alarmManager != null) {
+        if (alarmManager != null ) {
             if (Build.VERSION.SDK_INT >= 19) {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, initialTime, pendingIntent);
 

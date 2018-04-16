@@ -21,6 +21,7 @@ import android.widget.CalendarView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.support.v7.widget.Toolbar;
 
 
 import com.example.matts.calendarapp.data.Contract;
@@ -50,9 +51,12 @@ public class CalendarViewActivity extends AppCompatActivity implements LoaderMan
         NavigationView menu = findViewById(R.id.navigationView);
         menu.setNavigationItemSelectedListener(this); //have app call onNavigationItemSelected() when menu option is used
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
-        menuToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close);
+        Toolbar toolbar = findViewById(R.id.toolbarCalendar);
+        menuToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open, R.string.close);
         drawerLayout.addDrawerListener(menuToggle);
         menuToggle.syncState();
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         //setup widgets for this activity

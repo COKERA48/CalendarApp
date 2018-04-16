@@ -7,29 +7,46 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.support.v7.widget.Toolbar;
 
 import com.example.matts.calendarapp.data.Contract;
-import com.example.matts.calendarapp.data.DatabaseHelper;
 
-import org.w3c.dom.Text;
 
-public class ListTasksActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
+public class ListTasksActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "ListTasksActivity";
     SimpleCursorAdapter adapter;
     private static final int VEHICLE_LOADER = 0;
+    private ActionBarDrawerToggle menuToggle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_tasks);
+
+        //setup side menu and toggle button
+        NavigationView menu = findViewById(R.id.navigationView);
+        Toolbar toolbar = findViewById(R.id.toolbarListTasks);
+        menu.setNavigationItemSelectedListener(this); //have app call onNavigationItemSelected() when menu option is used
+        DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        menuToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open, R.string.close);
+        drawerLayout.addDrawerListener(menuToggle);
+        menuToggle.syncState();
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         ListView listView = findViewById(R.id.listView);
         TextView textViewNoTasks = findViewById(R.id.textViewNoTasks);
@@ -51,7 +68,6 @@ public class ListTasksActivity extends AppCompatActivity implements LoaderManage
 
                 Uri currentVehicleUri = ContentUris.withAppendedId(Contract.TaskEntry.CONTENT_URI, id);
 
-                // Set the URI on the data field of the intent
                 intent.setData(currentVehicleUri);
 
                 startActivity(intent);
@@ -96,4 +112,29 @@ public class ListTasksActivity extends AppCompatActivity implements LoaderManage
     public void onLoaderReset(Loader<Cursor> loader) {
         adapter.swapCursor(null);
     }
+
+    //from menu interface
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return menuToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
+    }
+
+    //from menu interface
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.home:
+                startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                return true;
+            case R.id.newTask:
+                startActivity(new Intent(getApplicationContext(), CategoryActivity.class));
+                return true;
+            case R.id.calendar:
+                startActivity(new Intent(getApplicationContext(), CalendarViewActivity.class));
+                return true;
+        }
+
+        return false;
+    }
+
 }
